@@ -25,6 +25,13 @@ Follow the steps below in order to use it:
 3. Now you can run the program with `python main.py`
 4. Run the UI at `GUI/Build/Smart Assistant.exe`
 
+Common Questions:
+- Microsoft Visual C++ is required
+Install Visual Studio Installer via this [link](https://aka.ms/vs/16/release/vs_buildtools.exe) and install C++ build tools.
+
+- How to change the UI?
+Install Unity and open GUI folder in Unity. Make sure you have the latest version. [Download here](https://unity.com/)
+
 
 ## Planning
 
