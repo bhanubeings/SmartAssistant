@@ -15,3 +15,5 @@ pylogix
 gTTS
 pydub
 soco
+pyyaml
+pyaudio
