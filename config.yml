@@ -1,0 +1,17 @@
+# This is the configuration file for the Smart Assistant
+# You can also edit in the UI of the Smart Assistant
+
+
+name: "Nyx"
+version: 1.0
+controller_ip: "192.168.1.10"
+SONOS_port: 6060
+hotword_train_bypass: true
+hotword_train_amount: 10
+user_firstname: "Nixon"
+user_lastname: "Cheng"
+socket_port: 6133
+socket_max_conn: 5
+
+audio_hardware: "default"
+
