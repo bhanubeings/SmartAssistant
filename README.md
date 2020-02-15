@@ -80,4 +80,4 @@ Time range: around 6 months
 - **Part of Code Structure**: [Jasper Project](https://github.com/jasperproject)
 
 ---
-[Email us!](nyxaiotmakers@gmail.com)
+[Email us!](nyxaiot@gmails.com)
