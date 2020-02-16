@@ -95,6 +95,7 @@ class BertChatbot(object):
 
     return model, enc_model, dec_model
 
+  # this might not be needed anymore
   def predict_model(self, weights_filepath):
     bert_model = TFBertModel.from_pretrained('bert-base-uncased')
     bert_model.trainable = False
