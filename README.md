@@ -8,12 +8,12 @@ This is a basic overview of the Smart Assistant project:
 This is a fully functional smart assistant that is able to control your house and automate them. There are lots of features included in it.
 
 Planned advance features:
-- [ ] Chat with you via chatbot (currently on going)
-- [ ] Detect faces
-- [ ] Recognize faces
-- [ ] Remember things / Set alarms
-- [ ] Sound recognition (able to differentiate several people's sound)
-- [ ] Control devices via PLC, Raspberry Pi, Arduino (I/O, IR)
+- Chat with you via chatbot (currently on going)
+- Detect faces
+- Recognize faces
+- Remember things / Set alarms
+- Sound recognition (able to differentiate several people's sound)
+- Control devices via PLC, Raspberry Pi, Arduino (I/O, IR)
 
 *We are adding more features!!!*
 
