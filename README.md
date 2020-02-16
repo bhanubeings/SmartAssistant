@@ -4,7 +4,7 @@ I have created a [playlist for this project.](https://www.youtube.com/watch?v=nc
 
 This is a basic overview of the Smart Assistant project:
 ![Plan](./pictures/Plan.png)
-## Smart Assistant
+# Smart Assistant #
 This is a fully functional smart assistant that is able to control your house and automate them. There are lots of features included in it.
 
 Planned features:
@@ -18,27 +18,27 @@ Planned features:
 
 *We are adding more features!!!*
 
-## Usage
+## Usage ##
 Follow these steps below in order to use it:
 1. Navigate into this directory and install the dependencies with `pip install -r requirements.txt`
 2. Open `config.yml` and edit the settings inside it. (if you want to retrain a new hotword, make sure you change the `hotword_train_bypass` to `False`)
 3. Now you can run the program with `python main.py`
 4. Run the UI at `GUI/Build/Smart Assistant.exe`
 
-## Common Questions
+## Common Questions ##
 
 - **Microsoft Visual C++ is required**
-	Install Visual Studio Installer via this [link](https://aka.ms/vs/16/release/vs_buildtools.exe) and install C++ build tools.
+Install Visual Studio Installer via this [link](https://aka.ms/vs/16/release/vs_buildtools.exe) and install C++ build tools.
 
 - **How to change the UI?**
-	Install Unity and open GUI folder in Unity. Make sure you have the latest version. [Download here](https://unity.com/)
+Install Unity and open GUI folder in Unity. Make sure you have the latest version. [Download here](https://unity.com/)
 
 - **How to solve pyttsx3 error?**
-	The last line of the error should be something like this: `TypeError: item 1 in _argtypes_ passes a union by value, which is unsupported.`
+The last line of the error should be something like this: `TypeError: item 1 in _argtypes_ passes a union by value, which is unsupported.`
 Head to [this](https://stackoverflow.com/a/60029700) thread and follow the step(s) given.
 
 
-## Planning
+## Planning ##
 
 - **Controller**
 1. To get the assistant to control devices. (PLC/Arduino)
@@ -76,12 +76,12 @@ Time range: extra time
 
 Time range: around 6 months
 
-## Build Settings
+### Build Settings ###
 - **Python**: Python 3.7.6
 - **Unity**: 2019.2.16f1
 - **Tensorflow**: v2.1.0
 
-## Credits
+### Credits ###
 - **PLC-Python Communication**: [dmroeder/pylogix](https://github.com/dmroeder/pylogix)
 - **Part of Code Structure**: [Jasper Project](https://github.com/jasperproject)
 
