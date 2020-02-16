@@ -74,6 +74,7 @@ Time range: around 6 months
 ## Build Settings
 - **Python**: Python 3.7x
 - **Unity**: 2019.2.16f1
+- **Tensorflow**: v2.1.0
 
 ## Credits
 - **PLC-Python Communication**: [dmroeder/pylogix](https://github.com/dmroeder/pylogix)

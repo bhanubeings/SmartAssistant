@@ -76,12 +76,26 @@ class BertChatbot(object):
     dec_lstm_layer, _, _ = dec_lstm(dec_inputs, initial_state=enc_lstm_states)
     dec_outputs = dense_out(dec_lstm_layer)
 
-
+    # create training model
     model = tf.keras.Model(inputs=[enc_inputs, dec_inputs], outputs=dec_outputs)
 
-    return model
+    # create encoder model
+    enc_model = tf.keras.Model(inputs=enc_inputs, outputs=enc_lstm_states)
 
-  def predict_model(self, weights_filepath="./models/weights.h5"):
+    # create decoder model
+    dec_state_input_h = tf.keras.Input(shape=(self.latent_dim,))
+    dec_state_input_c = tf.keras.Input(shape=(self.latent_dim,))
+    dec_states_inputs = [dec_state_input_h, dec_state_input_c]
+    dec_lstm_outputs, dec_state_h, dec_state_c = dec_lstm(dec_inputs, initial_state=dec_states_inputs)
+    dec_lstm_states = [dec_state_h, dec_state_c]
+    dec_outputs = dense_out(dec_lstm_outputs)
+
+    dec_model = tf.keras.Model(inputs=[dec_inputs] + dec_states_inputs,
+                               outputs=[dec_outputs] + dec_lstm_states)
+
+    return model, enc_model, dec_model
+
+  def predict_model(self, weights_filepath):
     bert_model = TFBertModel.from_pretrained('bert-base-uncased')
     bert_model.trainable = False
     filters = 250
@@ -110,7 +124,7 @@ class BertChatbot(object):
 
     model = tf.keras.Model(inputs=[enc_inputs, dec_inputs], outputs=dec_outputs)
 
-    # model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 
     # load the trained weights into the model
     model.load_weights(weights_filepath)
@@ -163,12 +177,11 @@ class BertChatbot(object):
     decoded_sentence = self.tokenizer.decode(decoded_tokens)
     return decoded_sentence
 
-  def train(self, old_weights=None, save_as="./models/weights.h5", model_save_as="./models/model.h5",
-            epochs=1000, steps_per_epoch=32):
+  def train(self, weights_filepath, enc_weights_filepath, dec_weights_filepath, old_weights=None, epochs=1000, steps_per_epoch=32):
     if not old_weights:
-      model = self.training_model()
+      model, enc_model, dec_model = self.training_model()
     elif old_weights:
-      model = self.training_model()
+      model, enc_model, dec_model = self.training_model()
       model.load_weights(old_weights)
 
     model.summary()
@@ -188,15 +201,15 @@ class BertChatbot(object):
     callbacks = list()
     # callbacks.append(tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path, verbose=1))
     callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_dir))
-    model.compile(optimizer='rmsprop', loss='categorical_crossentropy',
-                  metrics=['accuracy'], callbacks=callbacks)
+    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
     model.fit_generator(generator=generator,
                         steps_per_epoch=steps_per_epoch,
                         epochs=epochs,
                         callbacks=callbacks,
                         shuffle=False)
-    model.save_weights(save_as)
-    model.save(model_save_as)
+    model.save_weights(weights_filepath)
+    enc_model.save_weights(enc_weights_filepath)
+    dec_model.save_weights(dec_weights_filepath)
 
   def test_chatbot(self): #need alot of changes here, especially the input_seq for the decode_sequence method!
     # load encoder model and decoder model
@@ -262,9 +275,14 @@ class BertChatbot(object):
 
 
 
-# BertChatbot().train(epochs=100)
-BertChatbot().train(old_weights="./models/weights.h5", epochs=100)
-# BertChatbot().test_chatbot()
-# BertChatbot().train_test()
+if __name__ == "__main__":
+  save_path = r"D:\Nyx\Codes\SAModels\chatbot"
+  # BertChatbot().train(epochs=100)
+  BertChatbot().train(old_weights=rf"{save_path}\weights.h5", epochs=1,
+    weights_filepath=rf"{save_path}\weights.h5",
+    enc_weights_filepath=rf"{save_path}\enc_weights.h5",
+    dec_weights_filepath=rf"{save_path}\dec_weights.h5")
+  # BertChatbot().test_chatbot()
+  # BertChatbot().train_test()
 
 
