@@ -72,7 +72,7 @@ Time range: extra time
 Time range: around 6 months
 
 ## Build Settings
-- **Python**: Python 3.7x
+- **Python**: Python 3.7.6
 - **Unity**: 2019.2.16f1
 - **Tensorflow**: v2.1.0
 
