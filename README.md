@@ -19,13 +19,13 @@ Planned features:
 *We are adding more features!!!*
 
 ## Usage
-Follow the steps below in order to use it:
+Follow these steps below in order to use it:
 1. Navigate into this directory and install the dependencies with `pip install -r requirements.txt`
 2. Open `config.yml` and edit the settings inside it. (if you want to retrain a new hotword, make sure you change the `hotword_train_bypass` to `False`)
 3. Now you can run the program with `python main.py`
 4. Run the UI at `GUI/Build/Smart Assistant.exe`
 
-##Common Questions
+## Common Questions
 
 - **Microsoft Visual C++ is required**
 Install Visual Studio Installer via this [link](https://aka.ms/vs/16/release/vs_buildtools.exe) and install C++ build tools.
