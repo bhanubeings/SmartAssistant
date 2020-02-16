@@ -90,5 +90,5 @@ class Speech(object):
     if text:
       return text["alternative"]
     else:
-      return None
+      return []
 

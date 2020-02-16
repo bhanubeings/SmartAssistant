@@ -61,6 +61,8 @@ ScriptsOnlyBuild:
     - UnityEngine.Experimental.Rendering.UI.DebugUIHandlerVector3
     - UnityEngine.Experimental.Rendering.UI.DebugUIHandlerVector4
     - UnityEngine.Experimental.Rendering.UI.UIFoldout
+    Unity.ShaderGraph.Editor.dll:
+    - UnityEditor.ShaderGraph.SubGraphAsset
     Unity.TextMeshPro.dll:
     - TMPro.TMP_ColorGradient
     - TMPro.TMP_FontAsset
@@ -76,6 +78,7 @@ ScriptsOnlyBuild:
     - UnityEditor.Graphs.AnimatorControllerTool
     UnityEditor.TestRunner.dll:
     - UnityEditor.TestTools.TestRunner.Api.CallbacksHolder
+    - UnityEditor.TestTools.TestRunner.TestListCacheData
     UnityEngine.UI.dll:
     - UnityEngine.EventSystems.EventSystem
     - UnityEngine.EventSystems.EventTrigger
@@ -272,9 +275,9 @@ ScriptsOnlyBuild:
     - Class: 114
       Script: {instanceID: 15658}
     - Class: 114
-      Script: {instanceID: 36432}
+      Script: {instanceID: 56420}
     - Class: 114
-      Script: {instanceID: 36434}
+      Script: {instanceID: 56422}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 117
@@ -1789,4 +1792,4 @@ ScriptsOnlyBuild:
   platform: 19
   scenePathNames:
   - Assets/AgentInterface/Scenes/Interface.unity
-  playerPath: D:/Nyx/Codes/SmartAssistant/GUI/Build/Smart Assistant.exe
+  playerPath: C:/Users/AMD/Desktop/SmartAssistant/GUI/Build/Smart Assistant.exe
