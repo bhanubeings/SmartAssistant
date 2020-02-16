@@ -28,13 +28,13 @@ Follow these steps below in order to use it:
 ## Common Questions
 
 - **Microsoft Visual C++ is required**
-Install Visual Studio Installer via this [link](https://aka.ms/vs/16/release/vs_buildtools.exe) and install C++ build tools.
+	Install Visual Studio Installer via this [link](https://aka.ms/vs/16/release/vs_buildtools.exe) and install C++ build tools.
 
 - **How to change the UI?**
-Install Unity and open GUI folder in Unity. Make sure you have the latest version. [Download here](https://unity.com/)
+	Install Unity and open GUI folder in Unity. Make sure you have the latest version. [Download here](https://unity.com/)
 
 - **How to solve pyttsx3 error?**
-The last line of the error should be something like this: `TypeError: item 1 in _argtypes_ passes a union by value, which is unsupported.`
+	The last line of the error should be something like this: `TypeError: item 1 in _argtypes_ passes a union by value, which is unsupported.`
 Head to [this](https://stackoverflow.com/a/60029700) thread and follow the step(s) given.
 
 
