@@ -7,7 +7,7 @@ This is a basic overview of the Smart Assistant project:
 # Smart Assistant #
 This is a fully functional smart assistant that is able to control your house and automate them. There are lots of features included in it.
 
-Planned advance features:
+**Planned advance features:**
 - Chat with you via AI Chatbot ***(currently on going)***
 - Detect faces
 - Recognize faces
