@@ -36,6 +36,13 @@ Follow these steps below in order to use it:
 - The last line of the error should be something like this: `TypeError: item 1 in _argtypes_ passes a union by value, which is unsupported.`
 - Head to [this](https://stackoverflow.com/a/60029700) thread and follow the step(s) given.
 
+**How to install Pyaudio properly?**
+- If you clone this repository, there will be a wheel file called: `PyAudio...whl`
+- If not, you can download it via this [link](https://www.lfd.uci.edu/~gohlke/pythonlibs/) *tip: press ctrl+f and type 'pyaudio' make sure you install the version that matches your Python version*.
+- In any case, head to the directory that contains the file in Terminal/Command Prompt.
+- Type `pip wheel PyAudio...whl` *tip: replace `...` with whatever the version is*
+- Follow by `pip install PyAudio...whl`
+
 
 ## Planning ##
 
