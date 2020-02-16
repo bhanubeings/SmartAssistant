@@ -38,10 +38,10 @@ Follow these steps below in order to use it:
 
 **How to install Pyaudio properly?**
 - If you clone this repository, there will be a wheel file called: `PyAudio...whl`
-- If not, you can download it via this [link](https://www.lfd.uci.edu/~gohlke/pythonlibs/) *tip: press ctrl+f and type 'pyaudio' make sure you install the version that matches your Python version*.
+- If not, you can download it via this [link](https://www.lfd.uci.edu/~gohlke/pythonlibs/). *(tip: press ctrl+f and type 'pyaudio' make sure you install the version that matches your Python version)*
 - In any case, head to the directory that contains the file in Terminal/Command Prompt.
-- Type `pip wheel PyAudio...whl` *tip: replace `...` with whatever the version is*
-- Follow by `pip install PyAudio...whl`
+- Type `pip wheel PyAudio...whl`. *(tip: replace `...` with whatever the version is)*
+- Follow by `pip install PyAudio...whl`.
 
 
 ## Planning ##
