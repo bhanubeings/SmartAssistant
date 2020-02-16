@@ -7,23 +7,13 @@ This is a basic overview of the Smart Assistant project:
 # Smart Assistant #
 This is a fully functional smart assistant that is able to control your house and automate them. There are lots of features included in it.
 
-<details>
-	<summary>Planned features:</summary>
-	<p>- [x] Chat with you via chatbot (currently on going)</p>
-	<p>- [x] Detect faces</p>
-	<p>- [x] Recognize faces</p>
-	<p>- [x] Remember things / Set alarms</p>
-	<p>- [x] Sound recognition (able to differentiate several people's sound)</p>
-	<p>- [x] Control devices via PLC, Raspberry Pi, Arduino (I/O, IR)</p>
-</details>
-
 Planned advance features:
-- [x] Chat with you via chatbot (currently on going)
-- [x] Detect faces
-- [x] Recognize faces
-- [x] Remember things / Set alarms
-- [x] Sound recognition (able to differentiate several people's sound)
-- [x] Control devices via PLC, Raspberry Pi, Arduino (I/O, IR)
+- [ ] Chat with you via chatbot (currently on going)
+- [ ] Detect faces
+- [ ] Recognize faces
+- [ ] Remember things / Set alarms
+- [ ] Sound recognition (able to differentiate several people's sound)
+- [ ] Control devices via PLC, Raspberry Pi, Arduino (I/O, IR)
 
 *We are adding more features!!!*
 
@@ -37,14 +27,14 @@ Follow these steps below in order to use it:
 ## Common Questions ##
 
 - **Microsoft Visual C++ is required**
-Install Visual Studio Installer via this [link](https://aka.ms/vs/16/release/vs_buildtools.exe) and install C++ build tools.
+  - Install Visual Studio Installer via this [link](https://aka.ms/vs/16/release/vs_buildtools.exe) and install C++ build tools.
 
 - **How to change the UI?**
-Install Unity and open GUI folder in Unity. Make sure you have the latest version. [Download here](https://unity.com/)
+  - Install Unity and open GUI folder in Unity. Make sure you have the latest version. [Download here](https://unity.com/)
 
 - **How to solve pyttsx3 error?**
-The last line of the error should be something like this: `TypeError: item 1 in _argtypes_ passes a union by value, which is unsupported.`
-Head to [this](https://stackoverflow.com/a/60029700) thread and follow the step(s) given.
+  - The last line of the error should be something like this: `TypeError: item 1 in _argtypes_ passes a union by value, which is unsupported.`
+  - Head to [this](https://stackoverflow.com/a/60029700) thread and follow the step(s) given.
 
 
 ## Planning ##
