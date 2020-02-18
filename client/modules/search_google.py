@@ -11,7 +11,7 @@ def handle(text, Mic, Agent):
   words = word_tokenize(text)
   s = "+".join(words)
   query = query+s
-  webbrowser.open_new(query)
+  webbrowser.open_new_tab(query)
 
 
 
