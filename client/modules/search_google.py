@@ -1,23 +1,30 @@
 import re
 from nltk.tokenize import word_tokenize, sent_tokenize
+import webbrowser
 
 
 
 
 def handle(text, Mic, Agent):
-  Mic.say("whats up!")
-  print("please,anymore instructions?\n")
+  Mic.say(f"Searching for google on {text}!")
+  query = "https://www.google.com/search?q="
+  words = word_tokenize(text)
+  s = "+".join(words)
+  query = query+s
+  webbrowser.open_new(query)
+
+
 
 
 def isValid(text):
   # check if text is valid
-  return (bool(re.search(r"\bhey |hello |hi\b", text, re.IGNORECASE)))
+  return (bool(re.search(r"\bgoogle |search |what |how |why\b", text, re.IGNORECASE)))
 
 
 
 
 if __name__ == '__main__':
-  print(isValid("How is eveything going?"))
+  print(isValid("what is earth?"))
 
 '''
 >>> from nltk.tokenize import word_tokenize, sent_tokenize
