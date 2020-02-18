@@ -35,7 +35,7 @@ class BertChatbot(object):
     - chat history (from start) [state]
   """
 
-  def __init__(self, vocab_size=30522, max_input=512, name_len=10, max_output=50, latent_dim=128, learning_rate=1e-3):
+  def __init__(self, vocab_size=30522, max_input=512, name_len=10, max_output=50, latent_dim=256, learning_rate=1e-3):
     self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     self.max_input = max_input
@@ -57,21 +57,31 @@ class BertChatbot(object):
     # defining all layers
     enc_inputs = tf.keras.Input(shape=(self.max_input,), dtype=tf.int32)
     dec_inputs = tf.keras.Input(shape=(None, self.vocab_size,))
-    conv = tf.keras.layers.Conv1D(filters=filters, kernel_size=kernel_size,
-      padding="valid", activation="relu", strides=1)
+    conv1d = tf.keras.layers.Conv1D(filters=filters,
+                                  kernel_size=kernel_size,
+                                  padding="valid",
+                                  activation="relu",
+                                  strides=1)
+    max_pool = tf.keras.layers.MaxPooling1D(pool_size=2)
+    dropout = tf.keras.layers.Dropout(0.2)
+    flatten = tf.keras.layers.TimeDistributed(tf.keras.layers.Flatten())
 
     enc_lstm = tf.keras.layers.LSTM(self.latent_dim, return_state=True)
     dec_lstm = tf.keras.layers.LSTM(self.latent_dim, return_state=True, return_sequences=True)
     dense_out = tf.keras.layers.Dense(self.vocab_size, activation="softmax")
 
-    bert_states = bert_model(enc_inputs)[0]
-    conv_layer1 = conv(bert_states)
+    bert_states = bert_model(enc_inputs, training=False)[0]
+    conv_layer1 = tf.keras.layers.BatchNormalization()(conv1d(bert_states))
+    max_pool_layer1 = max_pool(conv_layer1)
+    enc_dropout_layer1 = dropout(max_pool_layer1)
+    flatten_layer1 = flatten(enc_dropout_layer1)
 
-    enc_lstm_layer, enc_state_h, enc_state_c = enc_lstm(conv_layer1)
+    _, enc_state_h, enc_state_c = enc_lstm(flatten_layer1)
     enc_lstm_states = [enc_state_h, enc_state_c]
 
-    dec_lstm_layer, _, _ = dec_lstm(dec_inputs, initial_state=enc_lstm_states)
-    dec_outputs = dense_out(dec_lstm_layer)
+    dec_lstm_layer1, _, _ = dec_lstm(dec_inputs, initial_state=enc_lstm_states)
+    dec_dropout_layer1 = dropout(dec_lstm_layer1)
+    dec_outputs = dense_out(dec_dropout_layer1)
 
     # create training model
     model = tf.keras.Model(inputs=[enc_inputs, dec_inputs], outputs=dec_outputs)
@@ -218,9 +228,14 @@ class BertChatbot(object):
         for u in usr_input:
           chat_history.append(u)
 
+        print(chat_history)
+        print(len(chat_history))
+
         chat_history = pad_sequences(sequences=[chat_history], maxlen=self.max_input,
                                      padding="post", truncating="pre")
 
+        print(chat_history)
+        print(len(chat_history[0]))
         decoded_sentence = self.decode_sequence(chat_history, enc_model, dec_model)
         print(f"[BertChatbot]: {decoded_sentence}")
 
@@ -236,7 +251,7 @@ if __name__ == "__main__":
   WEIGHTS_FILEPATH = rf"{save_path}\weights.h5"
   ENC_WEIGHTS_FILEPATH = rf"{save_path}\enc_weights.h5"
   DEC_WEIGHTS_FILEPATH = rf"{save_path}\dec_weights.h5"
-  BertChatbot().train(old_weights=WEIGHTS_FILEPATH, epochs=5000,
+  BertChatbot().train(old_weights=None, epochs=100,
                       weights_filepath=WEIGHTS_FILEPATH,
                       enc_weights_filepath=ENC_WEIGHTS_FILEPATH,
                       dec_weights_filepath=DEC_WEIGHTS_FILEPATH,
