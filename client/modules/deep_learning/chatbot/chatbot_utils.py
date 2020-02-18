@@ -83,7 +83,7 @@ def sort_data(converse_filepath, lines_filepath):
 
   return data
 
-def generator(data, vocab_size=30522, max_input=512, max_output=50, shuffle=True):
+def cornell_generator(data, vocab_size=30522, max_input=512, max_output=50, shuffle=True):
   """
   generates inputs with 30 [MASK] at the end
   generates outputs with by completing the [MASK] with appropriate words from the dataset
@@ -143,23 +143,53 @@ def sample_generator(data, vocab_size=30522, max_input=512, max_output=50, shuff
           if len(word_tokenize(chat_history)) > max_input:
             chat_history = " ".join(word_tokenize(chat_history)[-max_input:])
 
+def pull_twitter(twitter_filepath):
+  with open(twitter_filepath, "r", encoding="utf-8") as twt_f:
+    lines = twt_f.read().split("\n")
+
+  data = list()
+  for i, l in enumerate(tqdm(lines)):
+    if i % 2 == 0:
+      pair = list()
+      pair.append(l)
+    else:
+      pair.append(l)
+      data.append(pair)
+
+  return data
+
+def twitter_generator(data, vocab_size=30522, max_input=50, max_output=50, shuffle=True):
+  tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+  curr_pair = 0
+  if shuffle:
+    random.shuffle(data)
+
+  while True:
+    for d in data:
+      curr_pair += 1
+      if curr_pair != 0 and curr_pair % 10000 == 0:
+        print(f"\nCurrent pair: {curr_pair}")
+
+      enc_inputs = tokenizer.encode(d[0], add_special_tokens=True)
+
+      enc_inputs = pad_sequences(sequences=[enc_inputs], maxlen=max_input,
+        padding="post", truncating='pre', value=tokenizer.pad_token_id)
+
+      dec = tokenizer.encode(d[1], add_special_tokens=True)
+      dec_inputs = pad_sequences(sequences=[dec], maxlen=max_output,
+        padding="post", truncating="post", value=tokenizer.pad_token_id)
+      dec_outputs = pad_sequences(sequences=[dec[1:]], maxlen=max_output,
+        padding="post", truncating="post", value=tokenizer.pad_token_id)
+
+      dec_inputs = one_hot(dec_inputs, vocab_size)
+      dec_outputs = one_hot(dec_outputs, vocab_size)
+
+      yield [enc_inputs, dec_inputs], dec_outputs
+
 
 if __name__ == '__main__':
-  cornell_data = sort_data(CONVERSE_FILEPATH, LINES_FILEPATH)
-  # print(cornell_data[0][0])
-
-  if False:
-    print(len(cornell_data))
-    generator = generator(cornell_data)
-    for i in range(7):
-      print(next(generator)[0][0])
-
-  if True:
-    sample_generator = sample_generator(cornell_data)
-    for i in range(50):
-      next(sample_generator)
-    for i in range(10):
-      inputs, outputs = next(sample_generator)
-      print(f"In: {inputs}")
-      print(f"Out: {outputs}\n")
+  twitter_data = pull_twitter("./data/chat.txt")
+  print(len(twitter_data))
+  twitter_generator = twitter_generator(twitter_data)
+  print(next(twitter_generator))
 

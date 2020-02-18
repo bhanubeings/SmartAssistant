@@ -35,7 +35,7 @@ class BertChatbot(object):
     - chat history (from start) [state]
   """
 
-  def __init__(self, vocab_size=30522, max_input=512, name_len=10, max_output=50, latent_dim=256, learning_rate=1e-3):
+  def __init__(self, vocab_size=30522, max_input=50, name_len=10, max_output=50, latent_dim=256, learning_rate=1e-3):
     self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     self.max_input = max_input
@@ -51,7 +51,7 @@ class BertChatbot(object):
   def models(self):
     bert_model = TFBertModel.from_pretrained('bert-base-uncased')
     bert_model.trainable = False
-    filters = 250
+    filters = 32
     kernel_size = 3
 
     # defining all layers
@@ -148,6 +148,7 @@ class BertChatbot(object):
     model.summary()
 
     converse_filepath = "./data/movie_conversations.txt"
+    twitter_filepath = "./data/chat.txt"
     lines_filepath = "./data/movie_lines.txt"
     checkpoint_path = "./checkpoints"
     log_dir = "./logs"
@@ -157,15 +158,15 @@ class BertChatbot(object):
       if not os.path.exists(path):
         os.mkdir(path)
 
-    data = chatbot_utils.sort_data(converse_filepath, lines_filepath)
-    generator = chatbot_utils.generator(data=data)
+    twitter_data = chatbot_utils.pull_twitter(twitter_filepath)
+    twitter_generator = chatbot_utils.twitter_generator(twitter_data)
     callbacks = list()
     # callbacks.append(tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path, verbose=1))
     callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_dir))
     optimizer = tf.keras.optimizers.Adam(self.learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
 
     model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=[tf.keras.metrics.categorical_accuracy])
-    model.fit_generator(generator=generator,
+    model.fit_generator(generator=twitter_generator,
                         steps_per_epoch=steps_per_epoch,
                         epochs=epochs,
                         callbacks=callbacks,
@@ -228,14 +229,8 @@ class BertChatbot(object):
         for u in usr_input:
           chat_history.append(u)
 
-        print(chat_history)
-        print(len(chat_history))
-
         chat_history = pad_sequences(sequences=[chat_history], maxlen=self.max_input,
                                      padding="post", truncating="pre")
-
-        print(chat_history)
-        print(len(chat_history[0]))
         decoded_sentence = self.decode_sequence(chat_history, enc_model, dec_model)
         print(f"[BertChatbot]: {decoded_sentence}")
 
@@ -251,7 +246,7 @@ if __name__ == "__main__":
   WEIGHTS_FILEPATH = rf"{save_path}\weights.h5"
   ENC_WEIGHTS_FILEPATH = rf"{save_path}\enc_weights.h5"
   DEC_WEIGHTS_FILEPATH = rf"{save_path}\dec_weights.h5"
-  BertChatbot().train(old_weights=None, epochs=100,
+  BertChatbot().train(old_weights=None, epochs=1000,
                       weights_filepath=WEIGHTS_FILEPATH,
                       enc_weights_filepath=ENC_WEIGHTS_FILEPATH,
                       dec_weights_filepath=DEC_WEIGHTS_FILEPATH,
