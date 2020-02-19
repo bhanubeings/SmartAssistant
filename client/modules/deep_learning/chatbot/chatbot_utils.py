@@ -119,7 +119,7 @@ def cornell_generator(data, vocab_size=30522, max_input=512, max_output=50, shuf
 
           yield [enc_inputs, dec_inputs], dec_outputs
 
-def sample_generator(data, vocab_size=30522, max_input=512, max_output=50, shuffle=True):
+def cornell_sample_generator(data, vocab_size=30522, max_input=512, max_output=50, shuffle=True):
   """
   generates inputs with 30 [MASK] at the end
   generates outputs with by completing the [MASK] with appropriate words from the dataset
@@ -158,7 +158,7 @@ def pull_twitter(twitter_filepath):
 
   return data
 
-def twitter_generator(data, vocab_size=30522, max_input=50, max_output=50, shuffle=True):
+def twitter_generator(data, vocab_size=30522, max_input=30, max_output=30, shuffle=True):
   tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
   curr_pair = 0
   if shuffle:
@@ -173,7 +173,7 @@ def twitter_generator(data, vocab_size=30522, max_input=50, max_output=50, shuff
       enc_inputs = tokenizer.encode(d[0], add_special_tokens=True)
 
       enc_inputs = pad_sequences(sequences=[enc_inputs], maxlen=max_input,
-        padding="post", truncating='pre', value=tokenizer.pad_token_id)
+        padding="post", truncating='post', value=tokenizer.pad_token_id)
 
       dec = tokenizer.encode(d[1], add_special_tokens=True)
       dec_inputs = pad_sequences(sequences=[dec], maxlen=max_output,
@@ -190,6 +190,7 @@ def twitter_generator(data, vocab_size=30522, max_input=50, max_output=50, shuff
 if __name__ == '__main__':
   twitter_data = pull_twitter("./data/chat.txt")
   print(len(twitter_data))
-  twitter_generator = twitter_generator(twitter_data)
-  print(next(twitter_generator))
+  # twitter_generator = twitter_generator(twitter_data)
+  # print(next(twitter_generator))
+  print(twitter_data[:5])
 

@@ -35,11 +35,10 @@ class BertChatbot(object):
     - chat history (from start) [state]
   """
 
-  def __init__(self, vocab_size=30522, max_input=50, name_len=10, max_output=50, latent_dim=256, learning_rate=1e-3):
+  def __init__(self, vocab_size=30522, max_input=30, max_output=30, latent_dim=256, learning_rate=1e-3):
     self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     self.max_input = max_input
-    self.name_len = name_len
     self.max_output = max_output
     self.vocab_size = vocab_size
     self.latent_dim = latent_dim
@@ -119,7 +118,8 @@ class BertChatbot(object):
 
       # Sample a token
       sampled_token_index = np.argmax(output_tokens[0, -1, :])
-      decoded_tokens.append(sampled_token_index)
+      if sampled_token_index != self.sep_id:
+        decoded_tokens.append(sampled_token_index)
 
       # Exit condition: either hit max length or find stop character.
       if (sampled_token_index == self.sep_id or len(decoded_tokens) > self.max_output):
@@ -136,6 +136,8 @@ class BertChatbot(object):
 
   def train(self, weights_filepath, enc_weights_filepath, dec_weights_filepath,
             old_weights=None, epochs=1000, steps_per_epoch=100, test_after_train=False):
+    print("\n\nMODE: Train")
+    print(f"Test after training: {test_after_train}\n") 
     if not old_weights:
       model, enc_model, dec_model = self.models()
     elif old_weights:
@@ -179,44 +181,20 @@ class BertChatbot(object):
     dec_model.save_weights(dec_weights_filepath)
     print("Done!")
 
-    print(f"\nTest after training: {test_after_train}")    
     if test_after_train:
-      exit_keyword = ".exit"
-      chat_history = [self.cls_id]
-
-      while True:
-        usr_input = input("[USER]: ")
-        if usr_input == exit_keyword:
-          print("Exiting BertChatbot...")
-          break
-        else:
-          usr_input = self.tokenizer.encode(usr_input, add_special_tokens=True)
-          usr_input = [u for u in usr_input[1:] if u != 0]
-          for u in usr_input:
-            chat_history.append(u)
-
-          chat_history = pad_sequences(sequences=[chat_history], maxlen=self.max_input,
-                                       padding="post", truncating="pre")
-
-          decoded_sentence = self.decode_sequence(chat_history, enc_model, dec_model)
-          print(f"[BertChatbot]: {decoded_sentence}")
-
-          chat_history = [ch for ch in list(chat_history)[0] if ch != 0]
-          decoded_sentence = self.tokenizer.encode(decoded_sentence, add_special_tokens=True)
-          decoded_sentence = [ds for ds in decoded_sentence[1:] if ds != 0]
-          for dt in decoded_sentence:
-            chat_history.append(dt)
+      self.test(enc_weights_filepath, dec_weights_filepath)
 
 
   def test(self, enc_weights_filepath, dec_weights_filepath):
+    print("\n\nMODE: Test")
     # load encoder model and decoder model
     _, enc_model, dec_model= self.models()
     print("Loading enc_model weights...")
     enc_model.load_weights(enc_weights_filepath)
     print("Loading dec_model weights...")
     dec_model.load_weights(dec_weights_filepath)
+
     exit_keyword = ".exit"
-    chat_history = [self.cls_id]
 
     while True:
       usr_input = input("[USER]: ")
@@ -225,20 +203,11 @@ class BertChatbot(object):
         break
       else:
         usr_input = self.tokenizer.encode(usr_input, add_special_tokens=True)
-        usr_input = [u for u in usr_input[1:] if u != 0]
-        for u in usr_input:
-          chat_history.append(u)
+        usr_input = pad_sequences(sequences=[usr_input], maxlen=self.max_input,
+                                     padding="post", truncating="post")
 
-        chat_history = pad_sequences(sequences=[chat_history], maxlen=self.max_input,
-                                     padding="post", truncating="pre")
-        decoded_sentence = self.decode_sequence(chat_history, enc_model, dec_model)
+        decoded_sentence = self.decode_sequence(usr_input, enc_model, dec_model)
         print(f"[BertChatbot]: {decoded_sentence}")
-
-        chat_history = [ch for ch in list(chat_history)[0] if ch != 0]
-        decoded_sentence = self.tokenizer.encode(decoded_sentence, add_special_tokens=True)
-        decoded_sentence = [ds for ds in decoded_sentence[1:] if ds != 0]
-        for dt in decoded_sentence:
-          chat_history.append(dt)
 
 
 if __name__ == "__main__":
@@ -246,7 +215,7 @@ if __name__ == "__main__":
   WEIGHTS_FILEPATH = rf"{save_path}\weights.h5"
   ENC_WEIGHTS_FILEPATH = rf"{save_path}\enc_weights.h5"
   DEC_WEIGHTS_FILEPATH = rf"{save_path}\dec_weights.h5"
-  BertChatbot().train(old_weights=None, epochs=1000,
+  BertChatbot().train(old_weights=WEIGHTS_FILEPATH, epochs=5000,
                       weights_filepath=WEIGHTS_FILEPATH,
                       enc_weights_filepath=ENC_WEIGHTS_FILEPATH,
                       dec_weights_filepath=DEC_WEIGHTS_FILEPATH,
