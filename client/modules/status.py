@@ -14,8 +14,13 @@ def handle(text, Mic, Agent):
 
 def isValid(text):
   # check if text is valid
-  return (bool(re.search(r'\bhow |how\'s |what |what\'s |status\b', text, re.IGNORECASE)) and \
-         bool(re.search(r'\b going| doing\b', text, re.IGNORECASE)))
+  return (
+    (
+      bool(re.search(r'\bhow |how\'s |what |what\'s \b', text, re.IGNORECASE)) and \
+      bool(re.search(r'\b going| doing\b', text, re.IGNORECASE))
+    ) or \
+    bool(re.search(r'\bstatus\b', text, re.IGNORECASE))
+  )
 
 
 
