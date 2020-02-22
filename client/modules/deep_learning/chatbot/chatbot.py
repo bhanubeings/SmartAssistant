@@ -1,4 +1,5 @@
 import tensorflow as tf
+import tensorlayer as tl
 from transformers import BertTokenizer, TFBertModel
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.backend import one_hot
@@ -35,7 +36,15 @@ class BertChatbot(object):
     - chat history (from start) [state]
   """
 
-  def __init__(self, vocab_size=30522, max_input=30, max_output=30, latent_dim=256, learning_rate=1e-3):
+  def __init__(self,
+               vocab_size=30522,
+               max_input=30,
+               max_output=30,
+               latent_dim=256,
+               learning_rate=1e-3,
+               n_layer=3,
+               filters=250,
+               kernel_size=3):
     self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     self.max_input = max_input
@@ -43,78 +52,86 @@ class BertChatbot(object):
     self.vocab_size = vocab_size
     self.latent_dim = latent_dim
     self.learning_rate = learning_rate
+    self.n_layer = n_layer
     self.cls_id = self.tokenizer.cls_token_id
     self.sep_id = self.tokenizer.sep_token_id
     self.pad_id = self.tokenizer.pad_token_id
 
-  def models(self):
-    bert_model = TFBertModel.from_pretrained('bert-base-uncased')
-    bert_model.trainable = False
-    filters = 32
-    kernel_size = 3
+    self.bert_model = TFBertModel.from_pretrained('bert-base-uncased')
+    self.bert_model.trainable = False
+    self.filters = filters
+    self.kernel_size = kernel_size
 
     # defining all layers
-    enc_inputs = tf.keras.Input(shape=(self.max_input,), dtype=tf.int32)
-    dec_inputs = tf.keras.Input(shape=(None, self.vocab_size,))
-    conv1d = tf.keras.layers.Conv1D(filters=filters,
-                                  kernel_size=kernel_size,
-                                  padding="valid",
-                                  activation="relu",
-                                  strides=1)
-    max_pool = tf.keras.layers.MaxPooling1D(pool_size=2)
-    dropout = tf.keras.layers.Dropout(0.2)
-    flatten = tf.keras.layers.TimeDistributed(tf.keras.layers.Flatten())
+    self.enc_inputs = tf.keras.Input(shape=(None,), dtype=tf.int32, name="enc_inputs")
+    self.dec_inputs = tf.keras.Input(shape=(None,), dtype=tf.int32, name="dec_inputs")
+    print(self.dec_inputs.shape)
 
-    enc_lstm = tf.keras.layers.LSTM(self.latent_dim, return_state=True)
-    dec_lstm = tf.keras.layers.LSTM(self.latent_dim, return_state=True, return_sequences=True)
-    dense_out = tf.keras.layers.Dense(self.vocab_size, activation="softmax")
+    self.gru = tf.keras.layers.GRU
+    self.dense_out = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(self.vocab_size,
+                                                                           activation="softmax",
+                                                                           name="dense_out"))
 
-    bert_states = bert_model(enc_inputs, training=False)[0]
-    conv_layer1 = tf.keras.layers.BatchNormalization()(conv1d(bert_states))
-    max_pool_layer1 = max_pool(conv_layer1)
-    enc_dropout_layer1 = dropout(max_pool_layer1)
-    flatten_layer1 = flatten(enc_dropout_layer1)
+    self.enc_layers = [self.gru(self.latent_dim, return_state=True, return_sequences=True) for i in range(self.n_layer)]
+    self.dec_layers = [self.gru(self.latent_dim, return_state=True, return_sequences=True) for i in range(self.n_layer)]
+    self.enc_states = [None for i in range(self.n_layer)] # [None, None, None]
+    self.dec_states = [None for i in range(self.n_layer)] # [None, None, None]
 
-    _, enc_state_h, enc_state_c = enc_lstm(flatten_layer1)
-    enc_lstm_states = [enc_state_h, enc_state_c]
+  def models(self):
 
-    dec_lstm_layer1, _, _ = dec_lstm(dec_inputs, initial_state=enc_lstm_states)
-    dec_dropout_layer1 = dropout(dec_lstm_layer1)
-    dec_outputs = dense_out(dec_dropout_layer1)
+    enc_output = self.bert_model(self.enc_inputs, training=False)[0]
+
+    for i in range(self.n_layer):
+      enc_output, self.enc_states[i] = self.enc_layers[i](enc_output)
+
+    dec_output = self.bert_model(self.dec_inputs, training=False)[0]
+
+    for i in range(self.n_layer):
+      dec_output, self.dec_states[i] = self.dec_layers[i](dec_output, initial_state=self.enc_states[i])
+
+    dense_output = self.dense_out(dec_output)
 
     # create training model
-    model = tf.keras.Model(inputs=[enc_inputs, dec_inputs], outputs=dec_outputs)
+    model = tf.keras.Model(inputs=[self.enc_inputs, self.dec_inputs], outputs=dense_output)
 
     # create encoder model
-    enc_model = tf.keras.Model(inputs=enc_inputs, outputs=enc_lstm_states)
+    enc_model = tf.keras.Model(inputs=self.enc_inputs, outputs=self.enc_states)
 
     # create decoder model
-    dec_state_input_h = tf.keras.Input(shape=(self.latent_dim,))
-    dec_state_input_c = tf.keras.Input(shape=(self.latent_dim,))
-    dec_states_inputs = [dec_state_input_h, dec_state_input_c]
-    dec_lstm_outputs, dec_state_h, dec_state_c = dec_lstm(dec_inputs, initial_state=dec_states_inputs)
-    dec_lstm_states = [dec_state_h, dec_state_c]
-    dec_outputs = dense_out(dec_lstm_outputs)
+    dec_state_input1 = tf.keras.Input(shape=(self.latent_dim,))
+    print(dec_state_input1.shape)
+    dec_state_input2 = tf.keras.Input(shape=(self.latent_dim,))
+    dec_state_input3 = tf.keras.Input(shape=(self.latent_dim,))
+    dec_state_inputs = [dec_state_input1, dec_state_input2, dec_state_input3]
 
-    dec_model = tf.keras.Model(inputs=[dec_inputs] + dec_states_inputs,
-                               outputs=[dec_outputs] + dec_lstm_states)
+    dec_states_inf = [None for i in range(self.n_layer)]
+    dec_output_inf = self.bert_model(self.dec_inputs, training=False)[0]
+
+    for i in range(self.n_layer):
+      dec_output_inf, dec_states_inf[i] = self.dec_layers[i](dec_output_inf, initial_state=dec_state_inputs[i])
+
+    dense_output = self.dense_out(dec_output_inf)
+
+    dec_model = tf.keras.Model(inputs=[self.dec_inputs] + dec_state_inputs,
+                               outputs=[dense_output] + dec_states_inf)
 
     return model, enc_model, dec_model
 
   def decode_sequence(self, input_seq, enc_model, dec_model):
     # Encode the input as state vectors.
     states_value = enc_model.predict(input_seq)
+    print(len(states_value))
+    print(states_value[0].shape)
 
     # Populate the first character of target sequence with the start character.
-    target_seq = np.zeros((1, 1, self.vocab_size))
-    target_seq[0, 0, self.cls_id] = 1.
-
+    target_seq = np.zeros((1, 1))
+    target_seq[0] = self.cls_id
     # Sampling loop for a batch of sequences
     # (to simplify, here we assume a batch of size 1).
     stop_condition = False
     decoded_tokens = list()
     while not stop_condition:
-      output_tokens, h, c = dec_model.predict([target_seq] + states_value)
+      output_tokens, state1, state2, state3 = dec_model.predict([target_seq] + states_value)
 
       # Sample a token
       sampled_token_index = np.argmax(output_tokens[0, -1, :])
@@ -126,16 +143,17 @@ class BertChatbot(object):
         stop_condition = True
 
       # Update the target sequence (of length 1).
-      target_seq = np.zeros((1, 1, self.vocab_size))
-      target_seq[0, 0, sampled_token_index] = 1
+      target_seq = np.zeros((1, 1))
+      target_seq[0] = sampled_token_index
       # Update states
-      states_value = [h, c]
+      states_value = [state1, state2, state3]
 
     decoded_sentence = self.tokenizer.decode(decoded_tokens)
     return decoded_sentence
 
   def train(self, weights_filepath, enc_weights_filepath, dec_weights_filepath,
             old_weights=None, epochs=1000, steps_per_epoch=100, test_after_train=False):
+    start_time = time.time()
     print("\n\nMODE: Train")
     print(f"Test after training: {test_after_train}\n") 
     if not old_weights:
@@ -181,6 +199,8 @@ class BertChatbot(object):
     dec_model.save_weights(dec_weights_filepath)
     print("Done!")
 
+    end_time = time.time()
+    print(f"Time taken: {(end_time-start_time)/60} min(s)")
     if test_after_train:
       self.test(enc_weights_filepath, dec_weights_filepath)
 
@@ -215,12 +235,12 @@ if __name__ == "__main__":
   WEIGHTS_FILEPATH = rf"{save_path}\weights.h5"
   ENC_WEIGHTS_FILEPATH = rf"{save_path}\enc_weights.h5"
   DEC_WEIGHTS_FILEPATH = rf"{save_path}\dec_weights.h5"
-  BertChatbot().train(old_weights=WEIGHTS_FILEPATH, epochs=5000,
-                      weights_filepath=WEIGHTS_FILEPATH,
-                      enc_weights_filepath=ENC_WEIGHTS_FILEPATH,
-                      dec_weights_filepath=DEC_WEIGHTS_FILEPATH,
-                      test_after_train=True)
-  # BertChatbot().test(enc_weights_filepath=rf"{save_path}\enc_weights.h5",
-  #                    dec_weights_filepath=rf"{save_path}\dec_weights.h5",)
+  # BertChatbot().train(old_weights=None, epochs=100,
+  #                     weights_filepath=WEIGHTS_FILEPATH,
+  #                     enc_weights_filepath=ENC_WEIGHTS_FILEPATH,
+  #                     dec_weights_filepath=DEC_WEIGHTS_FILEPATH,
+  #                     test_after_train=True)
+  BertChatbot().test(enc_weights_filepath=rf"{save_path}\enc_weights.h5",
+                     dec_weights_filepath=rf"{save_path}\dec_weights.h5",)
 
 
