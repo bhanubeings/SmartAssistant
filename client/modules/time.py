@@ -4,6 +4,7 @@ import random
 import string
 
 
+PRIORITY = 9
 
 month_dict = {
   1: "January",

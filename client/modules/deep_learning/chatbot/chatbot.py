@@ -42,9 +42,7 @@ class BertChatbot(object):
                max_output=30,
                latent_dim=256,
                learning_rate=1e-3,
-               n_layer=3,
-               filters=250,
-               kernel_size=3):
+               n_layer=3):
     self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     self.max_input = max_input
@@ -59,13 +57,10 @@ class BertChatbot(object):
 
     self.bert_model = TFBertModel.from_pretrained('bert-base-uncased')
     self.bert_model.trainable = False
-    self.filters = filters
-    self.kernel_size = kernel_size
 
     # defining all layers
     self.enc_inputs = tf.keras.Input(shape=(None,), dtype=tf.int32, name="enc_inputs")
     self.dec_inputs = tf.keras.Input(shape=(None,), dtype=tf.int32, name="dec_inputs")
-    print(self.dec_inputs.shape)
 
     self.gru = tf.keras.layers.GRU
     self.dense_out = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(self.vocab_size,
@@ -99,7 +94,6 @@ class BertChatbot(object):
 
     # create decoder model
     dec_state_input1 = tf.keras.Input(shape=(self.latent_dim,))
-    print(dec_state_input1.shape)
     dec_state_input2 = tf.keras.Input(shape=(self.latent_dim,))
     dec_state_input3 = tf.keras.Input(shape=(self.latent_dim,))
     dec_state_inputs = [dec_state_input1, dec_state_input2, dec_state_input3]
@@ -120,8 +114,6 @@ class BertChatbot(object):
   def decode_sequence(self, input_seq, enc_model, dec_model):
     # Encode the input as state vectors.
     states_value = enc_model.predict(input_seq)
-    print(len(states_value))
-    print(states_value[0].shape)
 
     # Populate the first character of target sequence with the start character.
     target_seq = np.zeros((1, 1))
@@ -151,8 +143,8 @@ class BertChatbot(object):
     decoded_sentence = self.tokenizer.decode(decoded_tokens)
     return decoded_sentence
 
-  def train(self, weights_filepath, enc_weights_filepath, dec_weights_filepath,
-            old_weights=None, epochs=1000, steps_per_epoch=100, test_after_train=False):
+  def train(self, weights_filepath, enc_weights_filepath, dec_weights_filepath, old_weights=None,
+            epochs=1000, steps_per_epoch=100, test_after_train=False):
     start_time = time.time()
     print("\n\nMODE: Train")
     print(f"Test after training: {test_after_train}\n") 
@@ -163,7 +155,7 @@ class BertChatbot(object):
       print("Loading last trained weights...")
       model.load_weights(old_weights)
       print("Loaded!\n")
-      time.sleep(1)
+      time.sleep(0.5)
 
     model.summary()
 
@@ -183,7 +175,7 @@ class BertChatbot(object):
     callbacks = list()
     # callbacks.append(tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path, verbose=1))
     callbacks.append(tf.keras.callbacks.TensorBoard(log_dir=log_dir))
-    optimizer = tf.keras.optimizers.Adam(self.learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
+    optimizer = tf.keras.optimizers.Adam(self.learning_rate, beta_1=0.9, beta_2=0.999, epsilon=1e-9)
 
     model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=[tf.keras.metrics.categorical_accuracy])
     model.fit_generator(generator=twitter_generator,
@@ -235,12 +227,14 @@ if __name__ == "__main__":
   WEIGHTS_FILEPATH = rf"{save_path}\weights.h5"
   ENC_WEIGHTS_FILEPATH = rf"{save_path}\enc_weights.h5"
   DEC_WEIGHTS_FILEPATH = rf"{save_path}\dec_weights.h5"
-  # BertChatbot().train(old_weights=None, epochs=100,
-  #                     weights_filepath=WEIGHTS_FILEPATH,
-  #                     enc_weights_filepath=ENC_WEIGHTS_FILEPATH,
-  #                     dec_weights_filepath=DEC_WEIGHTS_FILEPATH,
-  #                     test_after_train=True)
-  BertChatbot().test(enc_weights_filepath=rf"{save_path}\enc_weights.h5",
-                     dec_weights_filepath=rf"{save_path}\dec_weights.h5",)
+
+  bert_chatbot = BertChatbot(learning_rate=0.001)
+  bert_chatbot.train(old_weights=WEIGHTS_FILEPATH, epochs=2000,
+                     weights_filepath=WEIGHTS_FILEPATH,
+                     enc_weights_filepath=ENC_WEIGHTS_FILEPATH,
+                     dec_weights_filepath=DEC_WEIGHTS_FILEPATH,
+                     test_after_train=True)
+  # BertChatbot().test(enc_weights_filepath=rf"{save_path}\enc_weights.h5",
+  #                    dec_weights_filepath=rf"{save_path}\dec_weights.h5",)
 
 

@@ -40,8 +40,9 @@ config_dict["GREET"] = [f"Yes, {config_dict['user_firstname']}?",
                         "Anything?"]
 
 if __name__ == '__main__':
-  for c in config_dict:
-    print(f"{c}: {config_dict[c]}")
+  # for c in config_dict:
+  #   print(f"{c}: {config_dict[c]}")
+  print(config_dict)
 
   # with open("config.yml") as f:
   #   data = yaml.load(f, Loader=yaml.FullLoader)

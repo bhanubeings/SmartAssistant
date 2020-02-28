@@ -3,7 +3,7 @@ from nltk.tokenize import word_tokenize, sent_tokenize
 import webbrowser
 
 
-
+PRIORITY = 9
 
 def handle(text, Mic, Agent):
   remove_words = ["google ", "Google ", "search ", "for "]

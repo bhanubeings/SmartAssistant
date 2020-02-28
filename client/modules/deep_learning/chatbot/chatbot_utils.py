@@ -158,13 +158,12 @@ def pull_twitter(twitter_filepath):
 
   return data
 
-def twitter_generator(data, vocab_size=30522, max_input=30, max_output=30, shuffle=True, batch_size=None):
+def twitter_generator(data, vocab_size=30522, max_input=30, max_output=30, shuffle=True):
   tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
   curr_pair = 0
   if shuffle:
     random.shuffle(data)
 
-  batch_data = list()
   while True:
     for d in data:
       curr_pair += 1
@@ -177,7 +176,6 @@ def twitter_generator(data, vocab_size=30522, max_input=30, max_output=30, shuff
         padding="post", truncating='post', value=tokenizer.pad_token_id)
 
       dec = tokenizer.encode(d[1], add_special_tokens=True)
-      print(dec)
       dec_inputs = pad_sequences(sequences=[dec], maxlen=max_output,
         padding="post", truncating="post", value=tokenizer.pad_token_id)
       dec_outputs = pad_sequences(sequences=[dec[1:]], maxlen=max_output,
@@ -185,22 +183,13 @@ def twitter_generator(data, vocab_size=30522, max_input=30, max_output=30, shuff
 
       # dec_inputs = one_hot(dec_inputs, vocab_size)
       dec_outputs = one_hot(dec_outputs, vocab_size)
-      train_data = [enc_inputs, dec_inputs], dec_outputs
-
-      if batch_size:
-        if len(batch_data >= batch_size):
-          yield batch_data
-          batch_data = list()
-        else:
-          batch_data.append(train_data)
-      else:
-        yield train_data
+      yield [enc_inputs, dec_inputs], dec_outputs
 
 
 if __name__ == '__main__':
   twitter_data = pull_twitter("./data/chat.txt")
   print(len(twitter_data))
-  twitter_generator = twitter_generator(twitter_data)
-  print(next(twitter_generator))
+  # twitter_generator = twitter_generator(twitter_data)
+  # print(next(twitter_generator))
   print(twitter_data[:5])
 

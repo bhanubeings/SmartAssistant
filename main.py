@@ -48,8 +48,6 @@ class Agent(Util):
     self.CLIENT_PATH = pathways.CLIENT_PATH
     self.TEMP_PATH = pathways.TEMP_PATH
 
-    self.hotword_train_bypass = config["hotword_train_bypass"]
-    self.hotword_train_amount = config["hotword_train_amount"]
     if not os.path.isdir(self.TEMP_PATH): # create temp folder to store temp items
       os.mkdir(self.TEMP_PATH)
 

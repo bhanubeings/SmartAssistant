@@ -1,7 +1,7 @@
 import re
 
 
-
+PRIORITY = 8
 
 def handle(text, Mic, Agent):
   """

@@ -18,6 +18,9 @@ MODULES_PATH = os.path.join(CLIENT_PATH, "modules")
 # sub modules pathways
 CONTROLLER_PATH = os.path.join(MODULES_PATH, "logix_control")
 DL_PATH = os.path.join(MODULES_PATH, "deep_learning")
+
+# sub^2 modules pathways
+CHATBOT_PATH = os.path.join(DL_PATH, "chatbot")
 LOGIX_PATH = os.path.join(CONTROLLER_PATH, "pylogix")
 
 if __name__ == '__main__':
@@ -28,3 +31,5 @@ if __name__ == '__main__':
   print(MODULES_PATH)
   print(CONTROLLER_PATH)
   print(DL_PATH)
+  print(LOGIX_PATH)
+  print(CHATBOT_PATH)
