@@ -4,9 +4,8 @@ from client import app_utils
 import re
 from semantic.numbers import NumberService
 
-WORDS = ["NEWS", "YES", "NO", "FIRST", "SECOND", "THIRD"]
 
-PRIORITY = 3
+PRIORITY = 8
 
 URL = 'http://news.ycombinator.com'
 
