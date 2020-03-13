@@ -1,11 +1,12 @@
 from tqdm import tqdm
 import os
 import numpy as np
-import random
-from nltk.tokenize import word_tokenize, sent_tokenize
+import tensorflow_datasets as tfds
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.backend import one_hot
-from transformers import BertTokenizer
+import random
+import html
+import tensorflow as tf
+from matplotlib import pyplot as plt
 
 
 
@@ -83,113 +84,158 @@ def sort_data(converse_filepath, lines_filepath):
 
   return data
 
-def cornell_generator(data, vocab_size=30522, max_input=512, max_output=50, shuffle=True):
-  """
-  generates inputs with 30 [MASK] at the end
-  generates outputs with by completing the [MASK] with appropriate words from the dataset
-  """
-
-  tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-  curr_mov = 0
-  if shuffle:
-    random.shuffle(data)
-
-  while True:
-    for mov in data:
-      curr_mov += 1
-      print(f"\nCurrently at movie number: {curr_mov}\n")
-      chat_history = [101]
-      for converse in mov:
-        for i, line in enumerate(converse):
-          phrase = tokenizer.encode(line[1], add_special_tokens=True)
-
-          enc_inputs = pad_sequences(sequences=[chat_history], maxlen=max_input,
-            padding="post", truncating='pre', value=tokenizer.pad_token_id)
-          chat_history = [c for c in list(enc_inputs[0]) if c != 0]
-
-          for p in phrase[1:]:
-            chat_history.append(p)
-
-          dec_inputs = pad_sequences(sequences=[phrase], maxlen=max_output,
-            padding="post", truncating="post", value=tokenizer.pad_token_id)
-          dec_outputs = pad_sequences(sequences=[phrase[1:]], maxlen=max_output,
-            padding="post", truncating="post", value=tokenizer.pad_token_id)
-          dec_inputs = one_hot(dec_inputs, vocab_size)
-          dec_outputs = one_hot(dec_outputs, vocab_size)
-
-          yield [enc_inputs, dec_inputs], dec_outputs
-
-def cornell_sample_generator(data, vocab_size=30522, max_input=512, max_output=50, shuffle=True):
-  """
-  generates inputs with 30 [MASK] at the end
-  generates outputs with by completing the [MASK] with appropriate words from the dataset
-  """
-  curr_mov = 0
-  if shuffle:
-    random.shuffle(data)
-
-  while True:
-    for mov in data:
-      curr_mov += 1
-      print(f"\nCurrently at movie number: {curr_mov}\n")
-      chat_history = ""
-      for converse in mov:
-        for i, line in enumerate(converse):
-          inputs = chat_history
-          outputs = line[1]
-
-          yield inputs, outputs
-          chat_history += " " + outputs
-          if len(word_tokenize(chat_history)) > max_input:
-            chat_history = " ".join(word_tokenize(chat_history)[-max_input:])
-
-def pull_twitter(twitter_filepath):
+def pull_twitter(twitter_filepath, shuffle=True):
   with open(twitter_filepath, "r", encoding="utf-8") as twt_f:
     lines = twt_f.read().split("\n")
 
-  data = list()
+  inputs, outputs = list(), list()
   for i, l in enumerate(tqdm(lines)):
     if i % 2 == 0:
-      pair = list()
-      pair.append(l)
+      inputs.append(bytes(html.unescape(l).lower(), "utf-8"))
     else:
-      pair.append(l)
-      data.append(pair)
+      outputs.append(bytes(html.unescape(l).lower(), "utf-8"))
 
-  return data
+  popped = 0
+  for i, (ins, outs) in enumerate(zip(inputs, outputs)):
+    if not ins or not outs:
+      ins.pop(i)
+      outs.pop(i)
+      popped += 1
 
-def twitter_generator(data, vocab_size=30522, max_input=30, max_output=30, shuffle=True):
-  tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-  curr_pair = 0
+  print(f"Pairs popped: {popped}")
   if shuffle:
-    random.shuffle(data)
+    print("\nShuffling...")
+    inputs, outputs = shuffle_inputs_outputs(inputs, outputs)
 
-  while True:
-    for d in data:
-      curr_pair += 1
-      if curr_pair != 0 and curr_pair % 10000 == 0:
-        print(f"\nCurrent pair: {curr_pair}")
+  return inputs, outputs
 
-      enc_inputs = tokenizer.encode(d[0], add_special_tokens=True)
+def shuffle_inputs_outputs(inputs, outputs):
+  inputs_outputs = list(zip(inputs, outputs))
+  random.shuffle(inputs_outputs)
+  inputs, outputs = zip(*inputs_outputs)
+  return inputs, outputs
 
-      enc_inputs = pad_sequences(sequences=[enc_inputs], maxlen=max_input,
-        padding="post", truncating='post', value=tokenizer.pad_token_id)
+def create_tokenizers(inputs_outputs, inputs_outputs_savepaths, target_vocab_size):
+  inputs, outputs = inputs_outputs
+  inputs_savepath, outputs_savepath = inputs_outputs_savepaths
 
-      dec = tokenizer.encode(d[1], add_special_tokens=True)
-      dec_inputs = pad_sequences(sequences=[dec], maxlen=max_output,
-        padding="post", truncating="post", value=tokenizer.pad_token_id)
-      dec_outputs = pad_sequences(sequences=[dec[1:]], maxlen=max_output,
-        padding="post", truncating="post", value=tokenizer.pad_token_id)
+  # create tokens using tf subword tokenizer
+  inputs_tokenizer = tfds.features.text.SubwordTextEncoder.build_from_corpus(
+    inputs, target_vocab_size=target_vocab_size)
+  outputs_tokenizer = tfds.features.text.SubwordTextEncoder.build_from_corpus(
+    outputs, target_vocab_size=target_vocab_size)
+  # save tokenizers to savepaths
+  print("Saving tokenizers...")
+  inputs_tokenizer.save_to_file(inputs_savepath)
+  outputs_tokenizer.save_to_file(outputs_savepath)
 
-      # dec_inputs = one_hot(dec_inputs, vocab_size)
-      dec_outputs = one_hot(dec_outputs, vocab_size)
-      yield [enc_inputs, dec_inputs], dec_outputs
+  return inputs_tokenizer, outputs_tokenizer
 
+def load_tokenizers(inputs_outputs_savepaths):
+  print("Loading tokenizers...")
+  inputs_savepath, outputs_savepath = inputs_outputs_savepaths
+  inputs_tokenizer = tfds.features.text.SubwordTextEncoder.load_from_file(inputs_savepath)
+  outputs_tokenizer = tfds.features.text.SubwordTextEncoder.load_from_file(outputs_savepath)
+
+  return inputs_tokenizer, outputs_tokenizer
+
+def encode(inputs_outputs, inputs_outputs_tokenizer):
+  inputs, outputs = inputs_outputs
+  inputs_tokenizer, outputs_tokenizer = inputs_outputs_tokenizer
+
+  inputs = [inputs_tokenizer.vocab_size] + inputs_tokenizer.encode(
+      inputs) + [inputs_tokenizer.vocab_size+1]
+
+  outputs = [outputs_tokenizer.vocab_size] + outputs_tokenizer.encode(
+      outputs) + [outputs_tokenizer.vocab_size+1]
+  
+  return inputs, outputs
+
+def tf_encode(inputs_outputs, inputs_outputs_tokenizer):
+  result_in, result_out = tf.py_function(encode, [inputs_outputs, inputs_outputs_tokenizer], [tf.int64, tf.int64])
+  result_in.set_shape([None])
+  result_out.set_shape([None])
+
+  return result_in, result_out
+
+def prepare_data(batch_size, inputs_outputs, inputs_outputs_tokenizer, max_length):
+  print("Preparing data...")
+  inputs, outputs = inputs_outputs
+  if len(inputs) == len(outputs):
+    batches_in = list()
+    batches_out = list()
+    curr_batch_in = list()
+    curr_batch_out = list()
+    skipped = 0
+    for (ins, outs) in zip(inputs, outputs):
+      ins, outs = encode([ins, outs], inputs_outputs_tokenizer)
+      if len(ins) > max_length or len(outs) > max_length:
+        skipped += 1
+        continue
+      else:
+        ins = pad_sequences(sequences=[ins], maxlen=max_length,
+          padding="post", truncating='post', value=0.0)[0]
+        outs = pad_sequences(sequences=[outs], maxlen=max_length,
+          padding="post", truncating='post', value=0.0)[0]
+        curr_batch_in.append(ins)
+        curr_batch_out.append(outs)
+
+        if len(curr_batch_in) % batch_size == 0:
+          batches_in.append(tf.convert_to_tensor(curr_batch_in, dtype=tf.int64))
+          batches_out.append(tf.convert_to_tensor(curr_batch_out, dtype=tf.int64))
+          curr_batch_in = list()
+          curr_batch_out = list()
+
+    if curr_batch_in:
+      batches_in.append(tf.convert_to_tensor(curr_batch_in, dtype=tf.int64))
+      batches_out.append(tf.convert_to_tensor(curr_batch_out, dtype=tf.int64))
+
+    print(f"Total batches per epoch: {len(batches_in)}")
+    print(f"Total pairs skipped: {skipped}")
+
+    return batches_in, batches_out
+
+  else:
+    print("Given `inputs` length is not same as `outputs` length")
+
+def plot_attention_weights(inputs_outputs_tokenizer, attention, sentence, result, layer):
+  inputs_tokenizer, outputs_tokenizer = inputs_outputs_tokenizer
+  fig = plt.figure(figsize=(16, 8))
+  
+  sentence = inputs_tokenizer.encode(sentence)
+  
+  attention = tf.squeeze(attention[layer], axis=0)
+  
+  for head in range(attention.shape[0]):
+    ax = fig.add_subplot(2, 4, head+1)
+    
+    # plot the attention weights
+    ax.matshow(attention[head][:-1, :], cmap='viridis')
+
+    fontdict = {'fontsize': 10}
+    
+    ax.set_xticks(range(len(sentence)+2))
+    ax.set_yticks(range(len(result)))
+    
+    ax.set_ylim(len(result)-1.5, -0.5)
+        
+    ax.set_xticklabels(
+        ['<start>']+[inputs_tokenizer.decode([i]) for i in sentence]+['<end>'], 
+        fontdict=fontdict, rotation=90)
+    
+    ax.set_yticklabels([outputs_tokenizer.decode([i]) for i in result 
+                        if i < outputs_tokenizer.vocab_size], 
+                       fontdict=fontdict)
+    
+    ax.set_xlabel('Head {}'.format(head+1))
+  
+  plt.tight_layout()
+  plt.show()
 
 if __name__ == '__main__':
-  twitter_data = pull_twitter("./data/chat.txt")
-  print(len(twitter_data))
-  # twitter_generator = twitter_generator(twitter_data)
-  # print(next(twitter_generator))
-  print(twitter_data[:5])
+  inputs, outputs = pull_twitter("./data/chat.txt")
+  print(f"Total inputs: {len(inputs)}, Total outputs: {len(outputs)}")
+  for i in range(20):
+    print(f"""Input: {inputs[i].decode("utf-8")}""")
+    print(f"""Output: {outputs[i].decode("utf-8")}""")
 
