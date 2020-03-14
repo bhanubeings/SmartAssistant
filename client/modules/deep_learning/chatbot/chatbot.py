@@ -157,8 +157,8 @@ class TransformerChatbot(object):
                                      dec_padding_mask)
         loss = loss_function(tar_real, predictions)
 
-      gradients = tape.gradient(loss, transformer.trainable_variables)    
-      self.optimizer.apply_gradients(zip(gradients, transformer.trainable_variables))
+      gradients = tape.gradient(loss, self.transformer.trainable_variables)    
+      self.optimizer.apply_gradients(zip(gradients, self.transformer.trainable_variables))
       
       self.train_loss(loss)
       self.train_accuracy(tar_real, predictions)

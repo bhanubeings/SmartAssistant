@@ -6,7 +6,7 @@ num_heads: 8
 dropout_rate: 0.1
 storage_path: null
 max_length: 40
-epochs: 100
+epochs: 50
 batch_size: 64
 # save a checkpoint every x epochs
 checkpoint: 5
@@ -16,6 +16,6 @@ max_checkpoint: 10
 custom_checkpoint: null
 
 # train/eval/test/deploy
-mode: "test"
+mode: "train"
 eval_limit: 10
 exit_phrase: ".exit"
