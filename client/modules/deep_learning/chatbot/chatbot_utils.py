@@ -20,6 +20,7 @@ CONVERSE_FILEPATH = "./data/movie_conversations.txt"
 LINES_FILEPATH = "./data/movie_lines.txt"
 
 def sort_data(converse_filepath, lines_filepath):
+  print("Sorting data...")
   seperator = " +++$+++ "
   """
   - movie_conversations.txt
@@ -83,6 +84,26 @@ def sort_data(converse_filepath, lines_filepath):
       movie_id = f[2]
 
   return data
+
+def pull_cornell(sorted_data, shuffle=True):
+  print("Distributing sorted data into inputs and outputs...")
+  data = list()
+  inputs = list()
+  outputs = list()
+  for movie_batches in tqdm(sorted_data):
+    for converse_batches in movie_batches:
+      for lines in converse_batches:
+        data.append(lines[1])
+
+      inputs += data[:-1]
+      outputs += data[1:]
+      data = list()
+
+  if shuffle:
+    print("\nShuffling...")
+    inputs, outputs = shuffle_inputs_outputs(inputs, outputs)
+
+  return inputs, outputs
 
 def pull_twitter(twitter_filepath, shuffle=True):
   with open(twitter_filepath, "r", encoding="utf-8") as twt_f:
@@ -233,9 +254,16 @@ def plot_attention_weights(inputs_outputs_tokenizer, attention, sentence, result
   plt.show()
 
 if __name__ == '__main__':
-  inputs, outputs = pull_twitter("./data/chat.txt")
-  print(f"Total inputs: {len(inputs)}, Total outputs: {len(outputs)}")
-  for i in range(20):
-    print(f"""Input: {inputs[i].decode("utf-8")}""")
-    print(f"""Output: {outputs[i].decode("utf-8")}""")
+  # inputs, outputs = pull_twitter("./data/chat.txt")
+  # print(f"Total inputs: {len(inputs)}, Total outputs: {len(outputs)}")
+  # for i in range(20):
+  #   print(f"""Input: {inputs[i].decode("utf-8")}""")
+  #   print(f"""Output: {outputs[i].decode("utf-8")}""")
+
+  srt_dt = sort_data(CONVERSE_FILEPATH, LINES_FILEPATH)
+  inputs, outputs = pull_cornell(srt_dt, 2)
+  # print('hi')
+  print(len(inputs), len(outputs))
+  print(inputs[0])
+  print(outputs[0])
 

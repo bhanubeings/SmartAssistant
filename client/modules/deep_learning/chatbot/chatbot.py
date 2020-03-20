@@ -46,10 +46,10 @@ class TransformerChatbot(object):
     self.data_path = f"{self.storage_path}data"
     self.checkpoint_path = f"{self.storage_path}checkpoints/train"
     self.tokenizer_path = f"{self.storage_path}tokenizers"
-
     self.inputs_savepath = f"{self.tokenizer_path}/inputs_token"
     self.outputs_savepath = f"{self.tokenizer_path}/outputs_token"
 
+    # create folders if they don't exists to prevent errors
     if not os.path.exists(f"{self.storage_path}checkpoints"):
       os.mkdir(f"{self.storage_path}checkpoints")
     if not os.path.exists(f"{self.storage_path}checkpoints/train"):
@@ -60,7 +60,9 @@ class TransformerChatbot(object):
       os.mkdir(f"{self.storage_path}models")
 
     # preparing tokenizers and twitter data
-    self.inputs, self.outputs = pull_twitter(f"{self.data_path}/chat.txt")
+    sorted_data = sort_data(f"{self.data_path}/movie_conversations.txt", f"{self.data_path}/movie_lines.txt")
+    # self.inputs, self.outputs = pull_twitter(f"{self.data_path}/chat.txt")
+    self.inputs, self.outputs = pull_cornell(sorted_data)
     try:
       self.inputs_tokenizer, self.outputs_tokenizer = load_tokenizers(
         inputs_outputs_savepaths=[self.inputs_savepath, self.outputs_savepath])
@@ -105,6 +107,14 @@ class TransformerChatbot(object):
         [self.inputs_tokenizer, self.outputs_tokenizer], self.max_length)
 
       self.train()
+      # do some simple evaluation after training
+      for (ins, outs) in zip(self.inputs, self.outputs):
+        predicted_sentence, attention_weights, sentence, result = self.translate(ins)
+        print(f"\nInput: {ins}")
+        print(f"Predicted: {predicted_sentence}")
+        print(f"Sample output: {outs}")
+      plot_attention_weights([self.inputs_tokenizer, self.outputs_tokenizer],
+        attention_weights, sentence, result, "decoder_layer4_block2")
 
     elif chatbot_config["mode"] == "eval":
       print("\nMODE: eval\n==========\n")
@@ -205,11 +215,11 @@ class TransformerChatbot(object):
     
       # predictions.shape == (batch_size, seq_len, vocab_size)
       predictions, attention_weights = self.transformer(encoder_input, 
-                                                   output,
-                                                   False,
-                                                   enc_padding_mask,
-                                                   combined_mask,
-                                                   dec_padding_mask)
+                                                        output,
+                                                        False,
+                                                        enc_padding_mask,
+                                                        combined_mask,
+                                                        dec_padding_mask)
       
       # select the last word from the seq_len dimension
       predictions = predictions[: ,-1:, :]  # (batch_size, 1, vocab_size)
